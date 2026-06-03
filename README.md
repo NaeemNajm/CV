@@ -3,7 +3,7 @@
 **Live Demo (GitHub Pages):** [Click Here to Build Your CV](https://naeemnajm.github.io/CV/)
 **Live Demo (Vercel):** [Click Here to Build Your CV](https://ourcv.vercel.app/)
 
-**Ultimate CV Builder Pro** is a fully dynamic, 100% client-side CV generator designed to help job seekers build professional, ATS-friendly, and modern resumes instantly. It features 21 premium templates, adaptive UI themes, real-time preview, multi-level dynamic sections, and a smart JSON data sync engine.
+**Ultimate CV Builder Pro** is a fully dynamic, 100% client-side CV generator designed to help job seekers build professional, ATS-friendly, and modern resumes instantly. It features 20 premium templates, adaptive UI themes, real-time preview, multi-level dynamic sections, and a smart JSON data sync engine.
 
 ---
 
@@ -49,7 +49,7 @@ My personal information is provided in the tool by default as a demo. You can ea
 **লাইভ ডেমো (GitHub Pages):** [এখানে ক্লিক করে সিভি তৈরি করুন](https://naeemnajm.github.io/CV/)
 **লাইভ ডেমো (Vercel):** [এখানে ক্লিক করে সিভি তৈরি করুন](https://ourcv.vercel.app/)
 
-**আল্টিমেট সিভি বিল্ডার প্রো** হলো একটি সম্পূর্ণ ডাইনামিক এবং ক্লায়েন্ট-সাইড সিভি জেনারেটর। এটি চাকরিপ্রার্থীদের কোনো কোডিং বা ডিজাইন জ্ঞান ছাড়াই প্রফেশনাল এবং আধুনিক সিভি তৈরি করতে সাহায্য করে। এতে ২১টি প্রিমিয়াম টেমপ্লেট, অ্যাডাপ্টিভ ইউআই থিম, লাইভ প্রিভিউ, মাল্টি-লেভেল ডাইনামিক সেকশন এবং স্মার্ট ডাটা ব্যাকআপ সিস্টেম রয়েছে।
+**আল্টিমেট সিভি বিল্ডার প্রো** হলো একটি সম্পূর্ণ ডাইনামিক এবং ক্লায়েন্ট-সাইড সিভি জেনারেটর। এটি চাকরিপ্রার্থীদের কোনো কোডিং বা ডিজাইন জ্ঞান ছাড়াই প্রফেশনাল এবং আধুনিক সিভি তৈরি করতে সাহায্য করে। এতে ২০টি প্রিমিয়াম টেমপ্লেট, অ্যাডাপ্টিভ ইউআই থিম, লাইভ প্রিভিউ, মাল্টি-লেভেল ডাইনামিক সেকশন এবং স্মার্ট ডাটা ব্যাকআপ সিস্টেম রয়েছে।
 
 ---
 
