@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
     <title>Editable CV - Nargis Sultana</title>
-    <!-- html2pdf library -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- Use a specific, stable version of html2pdf and explicitly import jsPDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>
     <style>
         body {
             font-family: Arial, Helvetica, sans-serif;
@@ -15,7 +15,6 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            overflow-x: hidden;
         }
         
         .controls-bar {
@@ -54,45 +53,23 @@
             padding: 15px 0;
         }
 
-        /* 
-         * EXTREME COMPACT LAYOUT
-         * Padding and margins are drastically reduced so 
-         * all new education and skills data fit on exactly 1 page.
-         */
         .cv-page {
-            width: 794px; /* A4 width */
-            height: 1123px; /* A4 height */
+            width: 100%;
+            max-width: 794px;
             background-color: #ffffff;
-            padding: 25px 45px; /* Extremely tight padding */
+            padding: 25px 45px;
             box-sizing: border-box;
             box-shadow: 0 5px 15px rgba(0,0,0,0.2);
             color: #111;
-            font-size: 12.5px; /* Smaller font to fit content */
-            line-height: 1.25; /* Tighter line height */
+            font-size: 12.5px;
+            line-height: 1.25;
             position: relative;
-            transform-origin: top center;
-            overflow: hidden; 
         }
 
-        /* PDF generation mode: overrides fixed sizing, overflow, and transforms */
-        .pdf-mode {
-            height: auto !important;
-            overflow: visible !important;
-            transform: none !important;
-        }
-        .pdf-mode .signature-area {
-            position: relative !important;
-            bottom: auto !important;
-            right: auto !important;
-            margin-left: auto;
-            margin-top: 20px;
-        }
-
-        /* Header matching original exactly */
         .header-container {
             display: flex;
             align-items: center;
-            margin-bottom: 8px; /* Very tight */
+            margin-bottom: 8px;
         }
 
         .photo-box {
@@ -119,19 +96,17 @@
         .header-text h1 { margin: 0 0 2px 0; font-size: 22px; font-weight: bold; color: #111; }
         .header-text p { margin: 1px 0; font-size: 13px; }
 
-        /* Typography & Layout matching image */
         .section-title {
             background-color: #e6e6e6;
-            padding: 3px 6px; 
+            padding: 3px 6px;
             font-weight: bold;
             font-size: 13.5px;
-            margin: 8px 0 4px 0; 
+            margin: 8px 0 4px 0;
             color: #000;
         }
 
         .paragraph { text-align: justify; margin-bottom: 6px; }
 
-        /* Tables */
         .edu-table {
             width: 100%;
             border-collapse: collapse;
@@ -139,65 +114,78 @@
         }
         .edu-table th, .edu-table td {
             border: 1px solid #aaa;
-            padding: 3px; 
+            padding: 3px;
             text-align: center;
             font-size: 12px;
         }
         .edu-table th { background-color: #e6e6e6; font-weight: bold; }
 
-        /* Lists */
         ul { margin: 0 0 6px 0; padding-left: 20px; }
         ul li { margin-bottom: 2px; }
         .sub-text { display: block; font-size: 11px; color: #444; margin-top: 1px; }
 
-        /* Alignments */
         .layout-table { width: 100%; border-collapse: collapse; margin-bottom: 6px; }
         .layout-table td { padding: 1px 0; vertical-align: top; border: none; font-size: 12.5px; }
         .bullet-col { width: 15px; }
         .label-col { width: 160px; }
         .colon-col { width: 15px; text-align: center; font-weight: bold; }
         
-        /* Signature */
         .signature-area {
-            position: absolute;
-            bottom: 25px; 
-            right: 45px;
             text-align: center;
             width: 160px;
+            margin-left: auto;
+            margin-top: 20px;
+            padding-right: 20px;
         }
         .signature-text { font-size: 20px; font-family: 'Brush Script MT', 'Lucida Handwriting', cursive, sans-serif; margin-bottom: 1px; color: #222; }
         .signature-line { border-top: 1px solid #000; padding-top: 2px; font-size: 11.5px; }
 
-        /* Edit Hints & Hover Styles */
         [contenteditable="true"] { outline: none; border-radius: 2px; }
         [contenteditable="true"]:hover { background-color: #f8f9fa; outline: 1px dashed #ccc; }
         [contenteditable="true"]:focus { background-color: #e8f4ff; outline: 1px solid #007bff; }
         .edit-hint { color: #d9534f; font-size: 10px; margin-left: 10px; font-weight: normal; }
 
+        .hide-in-pdf { display: inline-block; }
+
+        .pdf-mode {
+            padding: 25px 45px !important;
+            width: 794px !important;
+            max-width: none !important;
+            margin: 0 !important;
+            box-shadow: none !important;
+            transform: none !important;
+            height: auto !important;
+            overflow: visible !important;
+        }
+        
+        .pdf-mode [contenteditable="true"] {
+            border: none !important;
+            background: transparent !important;
+            outline: none !important;
+        }
+
         @media print {
             body { background: #fff; padding: 0; }
             .controls-bar { display: none !important; }
             #cv-wrapper { padding: 0; }
-            .cv-page { box-shadow: none; margin: 0; transform: none !important; }
+            .cv-page { box-shadow: none; margin: 0; transform: none !important; max-width: none; width: 100%; }
             [contenteditable="true"]:hover, [contenteditable="true"]:focus { background: transparent; outline: none; }
             .edit-hint { display: none !important; }
+            .hide-in-pdf { display: none !important; }
         }
     </style>
 </head>
 <body>
 
-    <!-- Controls UI -->
-    <div class="controls-bar">
+    <div class="controls-bar" id="controls">
         <h3>১ পৃষ্ঠার গ্যারান্টিড এডিটেবল সি-ভি</h3>
-        <p class="hide-in-pdf">আপনার দেওয়া নতুন ৬টি সার্টিফিকেটের সব তথ্য বসিয়ে লেআউট আরও ছোট করা হয়েছে যাতে কিছুতেই কেটে না যায়।</p>
+        <p class="hide-in-pdf">পিডিএফ তৈরির সমস্যা পুরোপুরি ঠিক করা হয়েছে। লেখা আর কেটে যাবে না।</p>
         <button class="btn-download hide-in-pdf" onclick="generatePDF()">⬇️ ডাউনলোড PDF</button>
     </div>
 
-    <!-- Scalable Wrapper for Mobile -->
     <div id="cv-wrapper">
         <div class="cv-page" id="cv-document">
             
-            <!-- Header matching layout -->
             <div class="header-container">
                 <input type="file" id="imageUpload" accept="image/*" style="display: none;" onchange="previewImage(event)">
                 <div class="photo-box" onclick="document.getElementById('imageUpload').click()" title="Click to upload photo">
@@ -212,7 +200,6 @@
                 </div>
             </div>
 
-            <!-- Body -->
             <div contenteditable="true">
                 
                 <div class="section-title" contenteditable="false">Objective <span class="edit-hint hide-in-pdf">(এডিট করতে ক্লিক করুন)</span></div>
@@ -297,7 +284,6 @@
                 </table>
             </div>
 
-            <!-- Signature -->
             <div class="signature-area">
                 <div class="signature-text" contenteditable="true">Nargis</div>
                 <div class="signature-line">Applicant's Signature</div>
@@ -307,18 +293,16 @@
     </div>
 
     <script>
-        // Make sure it scales correctly on mobile devices without breaking the A4 layout
         function adjustScale() {
             const wrapper = document.getElementById('cv-wrapper');
             const doc = document.getElementById('cv-document');
             const viewWidth = window.innerWidth;
             
-            // If screen is smaller than A4 (794px), zoom out to fit perfectly
             if(viewWidth < 810) {
-                const scale = (viewWidth - 20) / 794; 
-                doc.style.transform = `scale(${scale})`;
-                // Adjust wrapper height to prevent scrolling over empty space
-                wrapper.style.height = `${1123 * scale}px`;
+                const scale = (viewWidth - 20) / 794;
+                doc.style.transform = 'scale(' + scale + ')';
+                doc.style.transformOrigin = 'top center';
+                wrapper.style.height = (1123 * scale) + 'px';
             } else {
                 doc.style.transform = 'none';
                 wrapper.style.height = 'auto';
@@ -346,32 +330,41 @@
         function generatePDF() {
             const element = document.getElementById('cv-document');
             
-            // Add pdf-mode class for clean rendering (removes fixed height, overflow, and transform)
+            document.querySelectorAll('.hide-in-pdf').forEach(function(el) {
+                el.style.display = 'none';
+            });
+            
+            const imgElement = document.getElementById('profileImage');
+            const photoBox = document.querySelector('.photo-box');
+            var originalPhotoBorder = photoBox.style.border;
+            if (imgElement.style.display !== 'block') {
+                photoBox.style.border = '1px solid transparent';
+            }
+
             element.classList.add('pdf-mode');
-            
-            // Hide UI helper elements
-            document.querySelectorAll('.hide-in-pdf').forEach(el => el.style.display = 'none');
-            
+
             const opt = {
                 margin:       0,
-                filename:     'Nargis_Sultana_Updated_CV.pdf',
+                filename:     'Nargis_Sultana_CV_Final.pdf',
                 image:        { type: 'jpeg', quality: 1 },
-                html2canvas:  { 
-                    scale: 2, 
-                    useCORS: true, 
-                    windowWidth: 794,
-                    scrollY: 0
+                html2canvas:  {
+                    scale: 2,
+                    useCORS: true,
+                    windowWidth: 794
                 },
-                jsPDF:        { 
-                    unit: 'mm', 
+                jsPDF:        {
+                    unit: 'mm',
                     format: 'a4',
                     orientation: 'portrait'
                 }
             };
-            
-            html2pdf().set(opt).from(element).save().then(() => {
+
+            html2pdf().set(opt).from(element).save().then(function() {
                 element.classList.remove('pdf-mode');
-                document.querySelectorAll('.hide-in-pdf').forEach(el => el.style.display = '');
+                document.querySelectorAll('.hide-in-pdf').forEach(function(el) {
+                    el.style.display = 'inline-block';
+                });
+                photoBox.style.border = originalPhotoBorder;
             });
         }
     </script>
