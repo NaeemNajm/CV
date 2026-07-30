@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0f172a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="CV Builder">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.svg">
+<title>Ultimate CV Builder Pro v40 - Smart File & Page Engine</title>
+<!-- html2pdf Library for Direct PDF Generation -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<style>
+    /* ========================================================
+       CORE VARIABLES & LAYOUT
+    ======================================================== */
+    :root {
+        --cv-pad-x: clamp(0.25in, 4%, 0.8in);
+        --cv-pad-y: clamp(0.25in, 3%, 0.8in);
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+        margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        background-color: #0b0f19; color: #f1f5f9; display: block;
+    }
+    
+    .app-header {
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 15px 25px;
+        border-bottom: 1px solid rgba(56, 189, 248, 0.2); box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+        position: relative; z-index: 10;
+    }
+    .header-container { display: flex; justify-content: space-between; align-items: center; max-width: 1600px; margin: 0 auto; flex-wrap: wrap; gap: 15px;}
+    .app-title-group { display: flex; flex-direction: column; }
+    .app-title { margin: 0; font-size: 15pt; color: #38bdf8; font-weight: 800; letter-spacing: 0.5px; text-shadow: 0 0 10px rgba(56, 189, 248, 0.3); }
+    .app-credit { font-size: 8.5pt; color: #94a3b8; margin-top: 3px; font-weight: 600; }
+    .app-credit span { color: #10b981; font-weight: 700; }
+    
+    .controls-top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap;}
+    .select-style {
+        padding: 10px 14px; background-color: #0f172a; color: #f8fafc;
+        border: 1px solid #334155; border-radius: 8px; font-size: 9.5pt; font-weight: 600; cursor: pointer; outline: none;
+    }
+    
+    /* Data Sync Buttons */
+    .btn-sync {
+        padding: 10px 16px; border: none; border-radius: 8px; font-weight: 700; font-size: 9.5pt; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; gap: 5px;
+    }
+    .btn-import { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid #3b82f6; }
+    .btn-import:hover { background: #3b82f6; color: white; }
+    .btn-export { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid #f59e0b; }
+    .btn-export:hover { background: #f59e0b; color: #fff; }
+    
+    .btn-print { padding: 10px 20px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; border-radius: 8px; font-weight: 700; font-size: 10pt; cursor: pointer; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2); transition: 0.3s; }
+    .btn-print:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(16, 185, 129, 0.4); }
+    
+    /* Layout */
+    .main-container { display: flex; width: 100%; height: calc(100vh - 85px); max-width: 100%; overflow: hidden; }
+    .sidebar { width: 35%; min-width: 400px; background-color: #141b2e; padding: 25px; border-right: 1px solid #1e293b; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+    .preview-pane { width: 65%; background-color: #1e2538; padding: 30px; overflow-y: auto; display: block; text-align: center; }
+    
+    /* Dynamic Forms */
+    .form-section { background: rgba(30, 41, 59, 0.7); padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.05); }
+    .form-section h3 { margin-top: 0; margin-bottom: 15px; font-size: 11pt; color: #38bdf8; text-transform: uppercase; border-bottom: 1px solid rgba(56, 189, 248, 0.2); padding-bottom: 6px; }
+    .section-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .section-label { color:#94a3b8; font-size:8pt; text-transform:uppercase; font-weight:bold; }
+    .remove-sec-btn { background: transparent; color: #ef4444; border: 1px solid #ef4444; padding: 4px 10px; border-radius: 4px; font-size: 8pt; font-weight: bold; cursor: pointer; transition: 0.3s; }
+    .remove-sec-btn:hover { background: #ef4444; color: white; }
+    .editable-title { background: #0f172a; border: 1px dashed #38bdf8; color: #38bdf8; font-size: 11pt; font-weight: 700; text-transform: uppercase; width: 100%; padding: 8px 10px; border-radius: 6px; margin-bottom: 15px; outline: none; transition: 0.3s; }
+    .editable-title:focus { border: 1px solid #38bdf8; box-shadow: 0 0 0 2px rgba(56,189,248,0.3); }
+    .dynamic-group { background: #0f172a; border: 1px solid #334155; padding: 15px; border-radius: 8px; margin-bottom: 12px; position: relative; }
+    .remove-btn { position: absolute; top: 10px; right: 10px; background: #ef4444; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 8pt; font-weight: bold; cursor: pointer; transition: 0.2s; }
+    .remove-btn:hover { background: #dc2626; }
+    .add-btn { background: #10b981; color: white; border: none; padding: 10px; width: 100%; border-radius: 6px; font-size: 9.5pt; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; margin-top: 5px; transition: 0.2s; }
+    .add-sec-btn { background: #3b82f6; color: white; border: none; padding: 12px; width: 100%; border-radius: 8px; font-size: 11pt; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 10px; transition: 0.3s; }
+    
+    .form-group { margin-bottom: 12px; }
+    .form-group label { display: block; font-size: 9pt; font-weight: 600; margin-bottom: 6px; color: #94a3b8; }
+    .form-group input, .form-group textarea { width: 100%; padding: 10px; background-color: #0f172a; border: 1px solid #334155; border-radius: 6px; color: #f8fafc; font-size: 10pt; }
+    .form-group textarea { height: 110px; resize: vertical; }
+    .slider-group { margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; }
+    .slider-group label { font-size: 8.5pt; width: 55px; color: #94a3b8;}
+    .slider-group input { width: calc(100% - 60px); cursor: pointer; }
+
+    /* ========================================================
+       PREVIEW PAPER & TEMPLATES
+    ======================================================== */
+    #cv-scale-wrapper { width: 850px; margin: 0 auto; transform-origin: top center; }
+    
+    /* V40 UPDATE: MIN-HEIGHT ADDED TO PREVENT PDF CROPPING ON SHORT CVs */
+    #cv-paper { 
+        width: 850px; 
+        min-height: 1100px; /* Forces standard Letter/A4 simulation */
+        height: auto; 
+        display: block; 
+        background-color: white; 
+        margin: 0 auto; 
+        padding: var(--cv-pad-y) var(--cv-pad-x); 
+        box-shadow: 0 15px 45px rgba(0,0,0,0.6); 
+        color: #1e293b; 
+        text-align: left; 
+        position: relative; 
+        box-sizing: border-box; 
+    }
+    
+    #cv-paper::after, .cv-header::after { content: ""; display: table; clear: both; }
+    
+    .cv-header { margin-bottom: 15px; }
+    .cv-photo-frame { width: 120px; height: 120px; overflow: hidden; border-radius: 6px; background-color: #e2e8f0; float: right; position: relative; }
+    .cv-photo-frame img { position: absolute; width: 100%; height: 100%; object-fit: cover; }
+    .cv-name-title { float: left; width: calc(100% - 140px); }
+    .cv-name { font-size: 26pt; font-weight: 800; color: #0f172a; margin: 0; line-height: 1.1; letter-spacing: -0.5px; }
+    .cv-title { font-size: 13pt; font-weight: 600; color: #0284c7; margin: 6px 0; }
+    .cv-contact-row { font-size: 10pt; color: #334155; line-height: 1.4; }
+    
+    .cv-sec { margin-top: 15px; margin-bottom: 15px; clear: both; }
+    .cv-sec-title { font-size: 13pt; font-weight: 700; text-transform: uppercase; border-bottom: 2px solid #0f172a; padding-bottom: 4px; margin-bottom: 10px; color: #0f172a; }
+    .cv-summary-text { font-size: 11pt; text-align: justify; line-height: 1.45; margin: 0; color: #334155; }
+    .cv-entry { margin-bottom: 12px; clear: both; }
+    .cv-entry-header { display: flex; justify-content: space-between; width: 100%; font-weight: bold; font-size: 11.5pt; color: #0f172a; }
+    .cv-entry-right { color: #475569; font-size: 10pt; font-weight: 600; text-align: right; }
+    .cv-entry-bullets { margin: 6px 0 0 0; padding-left: 20px; font-size: 10.5pt; text-align: justify; line-height: 1.45; color: #334155; }
+    .cv-entry-bullets li { margin-bottom: 4px; }
+    
+    .cv-skills-layout { display: flex; width: 100%; gap: 20px; }
+    .cv-skills-col { flex: 1; }
+    .cv-skill-item { font-size: 10.5pt; margin-bottom: 6px; line-height: 1.4; color: #334155; }
+    .cv-skill-item strong { color: #0f172a; font-weight: 700; }
+
+    /* Templates */
+    .tpl-executive .cv-header { background-color: #0f172a; color: white; margin: calc(-1 * var(--cv-pad-y)) calc(-1 * var(--cv-pad-x)) 20px calc(-1 * var(--cv-pad-x)); padding: 30px var(--cv-pad-x); }
+    .tpl-executive .cv-name { color: white; }
+    .tpl-executive .cv-title { color: #38bdf8; }
+    .tpl-executive .cv-contact-row { color: #cbd5e1; }
+    .tpl-executive .cv-sec-title { color: #0369a1; border-bottom: 2px solid #0369a1; }
+    .tpl-executive .cv-photo-frame { border: 2px solid #38bdf8; }
+    .tpl-harvard .cv-photo-frame { display: none !important; }
+    .tpl-harvard .cv-name-title { width: 100% !important; text-align: center; }
+    .tpl-harvard .cv-name { font-family: 'Times New Roman', serif; text-transform: uppercase; font-size: 28pt; }
+    .tpl-harvard .cv-title { text-align: center; color: #111; font-style: italic; }
+    .tpl-harvard .cv-contact-row { text-align: center; color: #222; }
+    .tpl-harvard .cv-sec-title { border-bottom: 1.5px solid #111; font-family: 'Times New Roman', serif; }
+    .tpl-twocol-wrapper { display: flex; width: 100%; }
+    .tpl-twocol-side { width: 32%; background-color: #f8fafc; border-right: 1px solid #e2e8f0; padding-right: 20px; }
+    .tpl-twocol-main { width: 68%; padding-left: 25px; }
+    .tpl-modern-sidebar .cv-photo-frame { float: none; margin: 0 auto 15px auto; width: 120px; height: 120px; border-radius: 50%; border: 3px solid #0284c7; }
+    .tpl-modern-sidebar .cv-name-title { width: 100%; text-align: center; }
+    .tpl-modern-sidebar .cv-sec-title { background-color: #0f172a; color: white; padding: 6px 12px; border: none; margin-top: 15px; }
+    .tpl-creative .cv-name { color: #e17055; }
+    .tpl-creative .cv-sec-title { color: #e17055; border-bottom: 2px solid #e17055; }
+    .tpl-creative .cv-photo-frame { border-radius: 50%; box-shadow: 4px 4px 0px #e17055; }
+    .tpl-minimal .cv-name { font-weight: 300; letter-spacing: 1px; }
+    .tpl-minimal .cv-sec-title { border-bottom: 1px solid #94a3b8; color: #334155; }
+    .tpl-minimal .cv-photo-frame { filter: grayscale(100%); border-radius: 0; }
+    .tpl-academic { font-family: 'Georgia', serif; }
+    .tpl-academic .cv-photo-frame { float: none; margin: 0 auto 12px auto; display: block; }
+    .tpl-academic .cv-name-title { width: 100%; text-align: center; }
+    .tpl-academic .cv-name { font-weight: normal; }
+    .tpl-academic .cv-title { font-style: italic; color: #333; }
+    .tpl-academic .cv-sec-title { text-align: center; border-bottom: 1px solid #333; font-style: italic; }
+    .tpl-tech { font-family: 'Courier New', Courier, monospace; }
+    .tpl-tech .cv-name { font-weight: bold; }
+    .tpl-tech .cv-sec-title { color: #10b981; border-bottom: 2px dashed #10b981; }
+    .tpl-elegant { font-family: 'Palatino', serif; }
+    .tpl-elegant .cv-header { border-bottom: 1px solid #2c3e50; padding-bottom: 10px; }
+    .tpl-elegant .cv-sec-title { color: #2c3e50; font-variant: small-caps; }
+    .tpl-timeline .cv-entry { border-left: 2px solid #0284c7; padding-left: 14px; position: relative; margin-left: 5px; }
+    .tpl-timeline .cv-entry::before { content: ''; position: absolute; left: -5px; top: 6px; width: 8px; height: 8px; background: #0284c7; border-radius: 50%; }
+    .tpl-card .cv-sec { background: #f8fafc; padding: 15px; border-radius: 6px; border: 1px solid #e2e8f0; }
+    .tpl-card .cv-sec-title { border: none; color: #4f46e5; border-bottom: 2px solid #c7d2fe; }
+    .tpl-cyberpunk { background-color: #0d0d12 !important; color: #e2e8f0 !important; font-family: 'Courier New', monospace; border-top: 15px solid #00ff9d; }
+    .tpl-cyberpunk .cv-sec { background: rgba(0,255,157,0.03); padding: 20px; border-left: 4px solid #00ff9d; border-right: 1px solid #00ff9d; border-bottom: 1px solid #00ff9d; position: relative; }
+    .tpl-cyberpunk .cv-name { color: #00ff9d; text-transform: uppercase; text-shadow: 0 0 5px rgba(0,255,157,0.8); }
+    .tpl-cyberpunk .cv-title { color: #ff00ea; font-weight: bold; }
+    .tpl-cyberpunk .cv-sec-title { color: #00ff9d; border: none; background: rgba(0,255,157,0.1); padding: 4px 10px; display: inline-block; }
+    .tpl-cyberpunk .cv-entry-header { color: #e2e8f0; }
+    .tpl-cyberpunk .cv-entry-right { color: #ff00ea; }
+    .tpl-cyberpunk .cv-summary-text, .tpl-cyberpunk .cv-entry-bullets, .tpl-cyberpunk .cv-skill-item { color: #94a3b8; }
+    .tpl-cyberpunk .cv-photo-frame { border: 2px solid #00ff9d; border-radius: 0; }
+    .tpl-glassmorphism { background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%) !important; padding: var(--cv-pad-x) !important; }
+    .tpl-glassmorphism .cv-header { background: rgba(255, 255, 255, 0.4); padding: 25px; border-radius: 20px; border: 1px solid white; box-shadow: 0 8px 32px rgba(31, 38, 135, 0.1); }
+    .tpl-glassmorphism .cv-sec { background: rgba(255, 255, 255, 0.5); padding: 25px; border-radius: 20px; border: 1px solid white; box-shadow: 0 8px 32px rgba(31, 38, 135, 0.1); }
+    .tpl-glassmorphism .cv-sec-title { border: none; color: #1e3a8a; font-weight: 800; }
+    .tpl-glassmorphism .cv-photo-frame { border: 5px solid white; border-radius: 50%; }
+    .tpl-material { background-color: #f0f2f5 !important; }
+    .tpl-material .cv-header { background: #6200ea; color: white; margin: calc(-1 * var(--cv-pad-y)) calc(-1 * var(--cv-pad-x)) 25px calc(-1 * var(--cv-pad-x)); padding: 30px var(--cv-pad-x); box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
+    .tpl-material .cv-name { color: white; }
+    .tpl-material .cv-title, .tpl-material .cv-contact-row { color: #e0e0e0; }
+    .tpl-material .cv-sec { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
+    .tpl-material .cv-sec-title { color: #6200ea; border-bottom: none; border-left: 5px solid #6200ea; padding-left: 12px; background: #fafafa; padding-top: 6px; padding-bottom: 6px; }
+    .tpl-material .cv-photo-frame { border-radius: 50%; border: 4px solid white; }
+    .tpl-brutalist { border: 15px solid black; background: #fff !important; }
+    .tpl-brutalist .cv-name { font-family: 'Impact', sans-serif; text-transform: uppercase; font-size: 42pt; line-height: 0.9; margin-bottom: 5px;}
+    .tpl-brutalist .cv-title { background: black; color: white; display: inline-block; padding: 5px 10px; font-weight: bold; }
+    .tpl-brutalist .cv-sec { border: 5px solid black; padding: 20px; box-shadow: 8px 8px 0px black; }
+    .tpl-brutalist .cv-sec-title { background: #ff0055; color: white; padding: 5px 10px; display: inline-block; border: 3px solid black; }
+    .tpl-brutalist .cv-photo-frame { filter: grayscale(100%); border: 5px solid black; border-radius: 0; box-shadow: 6px 6px 0px black;}
+    .tpl-nordic { background-color: #faf9f6 !important; color: #4a4a4a; border-radius: 20px; }
+    .tpl-nordic .cv-sec { background: #ffffff; padding: 25px; border-radius: 30px; border: 1px solid #f0eee9; }
+    .tpl-nordic .cv-name { color: #2c3e50; font-weight: 600; letter-spacing: -1px; font-size: 28pt;}
+    .tpl-nordic .cv-sec-title { color: #2c3e50; border-bottom: none; font-size: 16pt; }
+    .tpl-nordic .cv-photo-frame { border-radius: 40px; }
+    .tpl-gradient .cv-header { background: linear-gradient(135deg, #ff7eb3 0%, #ff758c 100%); margin: calc(-1 * var(--cv-pad-y)) calc(-1 * var(--cv-pad-x)) 30px calc(-1 * var(--cv-pad-x)); padding: 40px var(--cv-pad-x) 50px var(--cv-pad-x); border-bottom-left-radius: 50px; border-bottom-right-radius: 50px; box-shadow: 0 10px 20px rgba(255, 117, 140, 0.2); }
+    .tpl-gradient .cv-name, .tpl-gradient .cv-contact-row, .tpl-gradient .cv-title { color: white; }
+    .tpl-gradient .cv-sec-title { color: #ff758c; border-bottom: 3px solid #ff7eb3; display: inline-block; padding-bottom: 2px; }
+    .tpl-gradient .cv-photo-frame { border: 4px solid white; border-radius: 50%; }
+    .tpl-terminal { background-color: #0c0c0c !important; color: #33ff00 !important; font-family: 'Courier New', Courier, monospace; border: 5px solid #33ff00; border-radius: 10px; }
+    .tpl-terminal .cv-sec { border-left: 2px dashed #33ff00; padding-left: 20px; }
+    .tpl-terminal .cv-sec-title::before { content: "root@naeem:~/cv# ./"; color: #fff; }
+    .tpl-terminal .cv-sec-title { border-bottom: none; background: #33ff00; color: #000; display: inline-block; padding: 2px 8px; }
+    .tpl-terminal .cv-name, .tpl-terminal .cv-title, .tpl-terminal .cv-entry-header { color: #33ff00; }
+    .tpl-terminal .cv-contact-row, .tpl-terminal .cv-summary-text, .tpl-terminal .cv-entry-bullets, .tpl-terminal .cv-skill-item { color: #00cc00; }
+    .tpl-terminal .cv-photo-frame { filter: sepia(1) hue-rotate(60deg); border-radius: 0; border: 2px solid #33ff00; }
+    .tpl-editorial { font-family: 'Playfair Display', 'Georgia', serif; }
+    .tpl-editorial .cv-name { font-size: 40pt; text-transform: uppercase; letter-spacing: 4px; text-align: center; border-bottom: 6px solid black; padding-bottom: 10px;}
+    .tpl-editorial .cv-name-title { width: 100%; text-align: center; }
+    .tpl-editorial .cv-photo-frame { display: none; }
+    .tpl-editorial .cv-sec-title { font-size: 16pt; font-weight: bold; text-align: center; border-bottom: 1px solid black; border-top: 1px solid black; padding: 8px 0; letter-spacing: 3px; }
+    .tpl-editorial .cv-summary-text { display: flex; gap: 20px; text-align: justify; }
+    .tpl-fintech { background-color: #0f172a !important; color: #cbd5e1 !important; border-radius: 12px; }
+    .tpl-fintech .cv-sec { background: #1e293b; padding: 25px; border-radius: 12px; border-top: 4px solid #3b82f6; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3); }
+    .tpl-fintech .cv-name { color: #f8fafc; font-size: 28pt; }
+    .tpl-fintech .cv-title, .tpl-fintech .cv-sec-title { color: #60a5fa; }
+    .tpl-fintech .cv-sec-title { border-bottom: 1px solid #334155; padding-bottom: 10px; }
+    .tpl-fintech .cv-entry-header { color: #f1f5f9; }
+    .tpl-fintech .cv-entry-right { color: #93c5fd; background: rgba(59,130,246,0.1); padding: 4px 10px; border-radius: 6px; }
+    .tpl-fintech .cv-summary-text, .tpl-fintech .cv-entry-bullets, .tpl-fintech .cv-skill-item { color: #94a3b8; }
+    .tpl-fintech .cv-photo-frame { border: 3px solid #3b82f6; border-radius: 16px; }
+    .tpl-neumorphism { background-color: #e0e5ec !important; border-radius: 30px !important; }
+    .tpl-neumorphism .cv-sec { padding: 25px; border-radius: 20px; background: #e0e5ec; box-shadow: 9px 9px 16px rgb(163,177,198,0.6), -9px -9px 16px rgba(255,255,255, 0.5); }
+    .tpl-neumorphism .cv-photo-frame { border-radius: 50%; box-shadow: 6px 6px 12px rgb(163,177,198,0.6), -6px -6px 12px rgba(255,255,255, 0.5); border: 4px solid #e0e5ec; }
+    .tpl-neumorphism .cv-header { background: #e0e5ec; padding: 20px; border-radius: 20px; box-shadow: inset 6px 6px 10px rgb(163,177,198,0.5), inset -6px -6px 10px rgba(255,255,255, 0.5); }
+    .tpl-neumorphism .cv-sec-title { border: none; color: #4a5568; font-size: 15pt; }
+    .tpl-neumorphism .cv-name { color: #2d3748; }
+
+    /* ========================================================
+       📲 SMART MOBILE UX
+    ======================================================== */
+    .mobile-bottom-nav { display: none; } 
+    @media (max-width: 900px) {
+        .app-header { padding: 15px; }
+        .header-container { flex-direction: column; align-items: stretch; gap: 10px; }
+        .app-title-group { text-align: center; }
+        .controls-top { width: 100%; justify-content: center; gap: 8px;}
+        .select-style { width: 100%; text-align: center; padding: 12px; margin-bottom: 5px; }
+        .btn-sync { flex: 1; justify-content: center; padding: 10px; font-size: 9pt; }
+        .btn-print.desktop-only { display: none !important; }
+        
+        .mobile-bottom-nav {
+            display: flex; position: fixed; bottom: 0; left: 0; width: 100%;
+            background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(15px);
+            border-top: 1px solid rgba(56, 189, 248, 0.2); z-index: 9999;
+            padding: 8px 10px calc(8px + env(safe-area-inset-bottom)) 10px; gap: 10px;
+        }
+        .nav-btn { flex: 1; padding: 10px 0; background: transparent; border: none; color: #64748b; font-size: 9pt; font-weight: 700; display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; border-radius: 12px; transition: all 0.3s ease; }
+        .nav-btn.active { background: rgba(56, 189, 248, 0.1); color: #38bdf8; }
+        .nav-btn.download-btn { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3); }
+        
+        .main-container { height: calc(100dvh - 170px) !important; padding-bottom: 70px; }
+        .sidebar { height: 100%; padding-bottom: 20px; width: 100%; border: none; }
+        .preview-pane { width: 100%; padding: 20px 0 100px 0; background-color: #1e2538; display: none; align-items: flex-start; justify-content: center; overflow-x: hidden; overflow-y: auto; }
+    }
+
+    body.pdf-export-mode .main-container { display: block !important; }
+    body.pdf-export-mode .sidebar { display: none !important; }
+    body.pdf-export-mode .preview-pane { display: block !important; position: absolute !important; top: -9999px !important; left: 0 !important; width: 850px !important; padding: 0 !important; background: transparent !important; overflow: visible !important; }
+    body.pdf-export-mode #cv-scale-wrapper { transform: none !important; height: auto !important; width: 850px !important; margin: 0 !important; }
+    body.pdf-export-mode #cv-paper { width: 850px !important; box-shadow: none !important; margin: 0 !important; }
+</style>
+</head>
+<body>
+
+<div class="app-header">
+    <div class="header-container">
+        <div class="app-title-group">
+            <h1 class="app-title">🚀 Ultimate CV Builder Pro v40</h1>
+            <div class="app-credit">Engineered & Developed by: <span>Najmuzzaman Naeem</span></div>
+        </div>
+        <div class="controls-top">
+            <input type="file" id="import-file" accept=".json" style="display: none;" onchange="importData(event)">
+            
+            <button class="btn-sync btn-import" onclick="document.getElementById('import-file').click()">
+                📂 Import Data
+            </button>
+            <button class="btn-sync btn-export" onclick="exportData(true)">
+                💾 Export Data
+            </button>
+
+            <select class="select-style" id="style-select" onchange="applyTemplate()">
+                <optgroup label="Original Classics">
+                    <option value="tpl-executive">1. Executive Navy Banner</option>
+                    <option value="tpl-harvard">2. Harvard ATS Classic</option>
+                    <option value="tpl-modern-sidebar">3. Modern Two-Column Layout</option>
+                    <option value="tpl-creative">4. Creative Coral Accent</option>
+                    <option value="tpl-minimal">5. Minimalist Clean Grayscale</option>
+                    <option value="tpl-academic">6. Academic Scholar</option>
+                    <option value="tpl-tech">7. Tech Monospace Accent</option>
+                    <option value="tpl-elegant">8. Elegant Consulting</option>
+                    <option value="tpl-timeline">9. Compact Timeline Style</option>
+                    <option value="tpl-card">10. Premium Card Block Layout</option>
+                </optgroup>
+                <optgroup label="Modern & Unique">
+                    <option value="tpl-cyberpunk">11. Cyberpunk Neon</option>
+                    <option value="tpl-glassmorphism">12. Glassmorphism Frost</option>
+                    <option value="tpl-material">13. Material Design</option>
+                    <option value="tpl-brutalist">14. Brutalist Bold Contrast</option>
+                    <option value="tpl-nordic">15. Nordic Pastel Minimal</option>
+                    <option value="tpl-gradient">16. Gradient Wave Header</option>
+                    <option value="tpl-terminal">17. Retro Terminal</option>
+                    <option value="tpl-editorial">18. Magazine Editorial</option>
+                    <option value="tpl-fintech">19. Fintech Dark Mode</option>
+                    <option value="tpl-neumorphism">20. 3D Neumorphism Soft UI</option>
+                </optgroup>
+            </select>
+            <button class="btn-print desktop-only" onclick="downloadDirectPDF()">📥 Download PDF</button>
+        </div>
+    </div>
+</div>
+
+<div class="main-container">
+    <div class="sidebar" id="app-sidebar">
+        
+        <div class="form-section">
+            <h3>Profile & Framing Tool</h3>
+            <div class="form-group">
+                <label>Upload Profile Picture</label>
+                <input type="file" id="photo-input" accept="image/*" onchange="processPhoto(event)">
+                <div class="photo-tool-container">
+                    <div style="display: flex; gap: 15px; align-items: center;">
+                        <div style="width: 85px; height: 85px; flex-shrink: 0; border-radius: 8px; border: 2px solid #38bdf8; overflow: hidden; background: #1e293b; position: relative;">
+                            <img id="mini-photo-img" src="" style="position: absolute; width: 100%; height: 100%; object-fit: cover;">
+                        </div>
+                        <div style="flex-grow: 1;">
+                            <label style="font-size:8.5pt; color:#38bdf8; font-weight:bold; margin-bottom: 8px; display:block;">🎯 Live Face-Zoom:</label>
+                            <div class="slider-group"><label>Scale</label><input type="range" id="slider-zoom" min="50" max="300" value="130" oninput="updatePhotoPlacement()"></div>
+                            <div class="slider-group"><label>X-Axis</label><input type="range" id="slider-x" min="-100" max="100" value="0" oninput="updatePhotoPlacement()"></div>
+                            <div class="slider-group"><label>Y-Axis</label><input type="range" id="slider-y" min="-100" max="100" value="-10" oninput="updatePhotoPlacement()"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group"><label>Name</label><input type="text" id="in-name" value="Najmuzzaman Naeem" oninput="renderCV()"></div>
+            <div class="form-group"><label>Title</label><input type="text" id="in-title" value="Head of Executive Operations & IT Infrastructure" oninput="renderCV()"></div>
+            <div class="form-group"><label>Contact Line 1</label><input type="text" id="in-c1" value="naeembogra@gmail.com • +8801316100150 • Bogura / Dhaka, Bangladesh" oninput="renderCV()"></div>
+            <div class="form-group"><label>Contact Line 2</label><input type="text" id="in-c2" value="WhatsApp: https://wa.me/+8801316100150 • GitHub: github.com/naeembogra" oninput="renderCV()"></div>
+        </div>
+        
+        <div id="dynamic-sections-container">
+            <div class="form-section standard-sec" data-type="summary" id="sec-wrapper-summary">
+                <div class="section-header-row"><span class="section-label">Section Title</span><button class="remove-sec-btn" onclick="this.closest('.form-section').remove(); renderCV();">🗑️ Remove Section</button></div>
+                <input type="text" id="sec-title-summary" class="editable-title" value="Core Focus & Statement" oninput="renderCV()">
+                <div class="form-group">
+                    <textarea id="in-summary" oninput="renderCV()">A highly pragmatic operations leader and self-taught automation architect driven by a zero-touch automation philosophy to eliminate repetitive tasks. Adept at finding the most efficient paths to bypass legacy constraints and compress manual processing workloads into elegant digital interfaces. Grounded in a disciplined Madrasa background, I combine deep theoretical knowledge with modern tools (e.g., Google Maps, FlightRadar24) to master complex global logistics and AI-based itinerary design. I excel in both cloud infrastructure management and field-level operational compliance, bringing absolute integrity and rapid problem-solving focus to system engineering tracks.</textarea>
+                </div>
+            </div>
+            
+            <div class="form-section standard-sec" data-type="experience" id="sec-wrapper-exp">
+                <div class="section-header-row"><span class="section-label">Section Title</span><button class="remove-sec-btn" onclick="this.closest('.form-section').remove(); renderCV();">🗑️ Remove Section</button></div>
+                <input type="text" id="sec-title-exp" class="editable-title" value="Professional Experience" oninput="renderCV()">
+                
+                <div id="experience-list">
+                    <div class="dynamic-group experience-item">
+                        <button class="remove-btn" onclick="this.parentElement.remove(); renderCV();">X</button>
+                        <div class="form-group"><label>Job Title & Company</label><input type="text" class="in-j-h" value="Head of Executive Operations & IT Infrastructure • Al-Hikmah Tour & Travels" oninput="renderCV()"></div>
+                        <div class="form-group"><label>Date & Location</label><input type="text" class="in-j-d" value="June 2025 – Present" oninput="renderCV()"></div>
+                        <div class="form-group"><label>Description</label><textarea class="in-j-b" oninput="renderCV()">Direct global Hajj/Umrah logistics, managing end-to-end cross-border ticketing, visa streaming, and specialized bookings (e.g., Haramain High-Speed Railway) via international vendor portals.
+Architected and deployed a 'Serverless Client-Side Web Suite' via AI chaining (Umrah Costing Calculator, Itinerary Maker, Bulk ID Card Creator, Salary Trackers) for zero-cost local automation.
+Conversational AI Design & Fine-tuning: Integrated a premium AI chatbot (LazyChat) for customer-facing pages, engineering precise conversational models to deliver personalized, human-like automated responses.
+Established an AI-to-Production CI/CD pipeline, hosting internal tools on GitHub and deploying via Vercel for instantaneous team access.
+Maintained corporate accounting on Trabil ERP while acting as the primary IT procurement and hardware consultant.</textarea></div>
+                    </div>
+                    <div class="dynamic-group experience-item">
+                        <button class="remove-btn" onclick="this.parentElement.remove(); renderCV();">X</button>
+                        <div class="form-group"><label>Job Title & Company</label><input type="text" class="in-j-h" value="Production Manager • Ayojon Bakery and Sweets" oninput="renderCV()"></div>
+                        <div class="form-group"><label>Date & Location</label><input type="text" class="in-j-d" value="Dec 2022 – Apr 2025 • Noakhali" oninput="renderCV()"></div>
+                        <div class="form-group"><label>Description</label><textarea class="in-j-b" oninput="renderCV()">Supervised daily production metrics and established strict input-output accountability (leveraging the Hawthorne Effect) via a custom Google Sheets ecosystem, slashing waste by 15% and boosting fulfillment speed by 30%.
+Managed full-cycle supply chain and procurement, including product packaging design, master carton creation, and raw material sourcing.
+Handled regulatory compliance, government liaison, and stakeholder negotiation to secure BSTI licensing and legal clearances.</textarea></div>
+                    </div>
+                    <div class="dynamic-group experience-item">
+                        <button class="remove-btn" onclick="this.parentElement.remove(); renderCV();">X</button>
+                        <div class="form-group"><label>Job Title & Company</label><input type="text" class="in-j-h" value="Manager • AMS Footwear" oninput="renderCV()"></div>
+                        <div class="form-group"><label>Date & Location</label><input type="text" class="in-j-d" value="Nov 2020 – Nov 2022 • Bogura" oninput="renderCV()"></div>
+                        <div class="form-group"><label>Description</label><textarea class="in-j-b" oninput="renderCV()">Managed full manufacturing units, supply-side procurement, sales, and internal Excel spreadsheet tracking. Boosted repeat accounts by 20%.</textarea></div>
+                    </div>
+                    <div class="dynamic-group experience-item">
+                        <button class="remove-btn" onclick="this.parentElement.remove(); renderCV();">X</button>
+                        <div class="form-group"><label>Job Title & Company</label><input type="text" class="in-j-h" value="Assistant IT Manager • KhanqahBD" oninput="renderCV()"></div>
+                        <div class="form-group"><label>Date & Location</label><input type="text" class="in-j-d" value="Jan 2018 – Jun 2020 • Dhaka" oninput="renderCV()"></div>
+                        <div class="form-group"><label>Description</label><textarea class="in-j-b" oninput="renderCV()">Managed digital archiving, online distribution, and structured databases for extensive follower (Murid) records.
+Acted as the primary technical troubleshooter, rapidly resolving complex PC/mobile hardware and software issues through precise root-cause analysis.
+Led print production and vendor management during peak seasonal rushes for 'Hakimul Ummat' publications, ensuring strict deadline adherence.
+Handled IT procurement, leveraging hardware knowledge to source cost-effective tech solutions and modernize traditional operations.</textarea></div>
+                    </div>
+                </div>
+                <button class="add-btn" onclick="addExperienceGroup()">➕ Add More Experience</button>
+            </div>
+            
+            <div class="form-section standard-sec" data-type="projects" id="sec-wrapper-projects">
+                <div class="section-header-row"><span class="section-label">Section Title</span><button class="remove-sec-btn" onclick="this.closest('.form-section').remove(); renderCV();">🗑️ Remove Section</button></div>
+                <input type="text" id="sec-title-projects" class="editable-title" value="Self-Directed Systems & Projects" oninput="renderCV()">
+                <div class="form-group">
+                    <label>Add new lines to create bullet points</label>
+                    <textarea id="in-projects" oninput="renderCV()">• Open-Source Dynamic CV Builder Ecosystem: Engineered a client-side, prompt-driven architecture built to bypass template rigidities. Operates entirely in-browser ensuring strict data privacy, featuring live parsing and fluid multi-template transformation rules.
+• Automated Content Pipeline (Python/API): Designed a zero-touch automation architecture connecting NewsAPI, Unsplash, ElevenLabs, and MoviePy. Built robust logical data flows to generate and publish targeted video content, reducing production time by 80%.</textarea>
+                </div>
+            </div>
+            
+            <div class="form-section standard-sec" data-type="edu" id="sec-wrapper-edu">
+                <div class="section-header-row"><span class="section-label">Section Title</span><button class="remove-sec-btn" onclick="this.closest('.form-section').remove(); renderCV();">🗑️ Remove Section</button></div>
+                <input type="text" id="sec-title-edu" class="editable-title" value="Formal Background & Credentials" oninput="renderCV()">
+                <div class="form-group">
+                    <label>Add new lines to create bullet points</label>
+                    <textarea id="in-edu" oninput="renderCV()">• Master's in Arabic & Islamic Studies (Dawra-e-Hadith) • Al-Haiatul Ulya (Jamea Hakimul Ummat) • 2017 (Jaiyed Jiddan - 2nd Position Overall / 747 Marks)
+• Meshkaat • Faridabad Madrasa • 2015 (Result: Fair)
+• Qawmi Madrasa Curriculum • Jamil Madrasa, Bogra • 2013 (First Division)
+• Board Credentials • Madrasatul Ulumish Sharyiyah • 2012 (Ranked 1st in Tanjim Board, 30th Nationwide in Befaq)
+• Early Education • Sagatia Govt. Primary School • 2004 (Merit Scholarship in Class 5)</textarea>
+                </div>
+            </div>
+
+            <div class="form-section standard-sec" data-type="skills" id="sec-wrapper-skills">
+                <div class="section-header-row"><span class="section-label">Section Title</span><button class="remove-sec-btn" onclick="this.closest('.form-section').remove(); renderCV();">🗑️ Remove Section</button></div>
+                <input type="text" id="sec-title-skills" class="editable-title" value="Expertise Spectrum" oninput="renderCV()">
+                <div id="skills-list">
+                    <div class="dynamic-group skill-item" style="padding: 12px;">
+                        <button class="remove-btn" style="top: 8px; right: 8px; padding: 2px 6px;" onclick="this.parentElement.remove(); renderCV();">X</button>
+                        <div style="display: flex; gap: 10px; margin-right: 25px;">
+                            <input type="text" class="skill-label" value="Tech Frameworks" oninput="renderCV()" style="width: 35%; padding: 8px; background: #0f172a; border: 1px solid #334155; color: #38bdf8; font-weight:bold; border-radius: 4px;">
+                            <input type="text" class="skill-val" value="Python, HTML/CSS, JavaScript, Node.js, React, Git, Vercel, CI/CD, AppSheet" oninput="renderCV()" style="width: 65%; padding: 8px; background: #0f172a; border: 1px solid #334155; color: white; border-radius: 4px;">
+                        </div>
+                    </div>
+                    <div class="dynamic-group skill-item" style="padding: 12px;">
+                        <button class="remove-btn" style="top: 8px; right: 8px; padding: 2px 6px;" onclick="this.parentElement.remove(); renderCV();">X</button>
+                        <div style="display: flex; gap: 10px; margin-right: 25px;">
+                            <input type="text" class="skill-label" value="Enterprise Tools" oninput="renderCV()" style="width: 35%; padding: 8px; background: #0f172a; border: 1px solid #334155; color: #38bdf8; font-weight:bold; border-radius: 4px;">
+                            <input type="text" class="skill-val" value="Trabil ERP, Hostinger Server Admin, Global Logistics, Procurement, Compliance" oninput="renderCV()" style="width: 65%; padding: 8px; background: #0f172a; border: 1px solid #334155; color: white; border-radius: 4px;">
+                        </div>
+                    </div>
+                    <div class="dynamic-group skill-item" style="padding: 12px;">
+                        <button class="remove-btn" style="top: 8px; right: 8px; padding: 2px 6px;" onclick="this.parentElement.remove(); renderCV();">X</button>
+                        <div style="display: flex; gap: 10px; margin-right: 25px;">
+                            <input type="text" class="skill-label" value="AI & Digital Design" oninput="renderCV()" style="width: 35%; padding: 8px; background: #0f172a; border: 1px solid #334155; color: #38bdf8; font-weight:bold; border-radius: 4px;">
+                            <input type="text" class="skill-val" value="Conversational AI Design, Prompt-Driven Architecture, API Chaining, Zero-touch Automation" oninput="renderCV()" style="width: 65%; padding: 8px; background: #0f172a; border: 1px solid #334155; color: white; border-radius: 4px;">
+                        </div>
+                    </div>
+                    <div class="dynamic-group skill-item" style="padding: 12px;">
+                        <button class="remove-btn" style="top: 8px; right: 8px; padding: 2px 6px;" onclick="this.parentElement.remove(); renderCV();">X</button>
+                        <div style="display: flex; gap: 10px; margin-right: 25px;">
+                            <input type="text" class="skill-label" value="Languages" oninput="renderCV()" style="width: 35%; padding: 8px; background: #0f172a; border: 1px solid #334155; color: #38bdf8; font-weight:bold; border-radius: 4px;">
+                            <input type="text" class="skill-val" value="Bengali (Native), English (B1), Urdu (Advanced), Arabic (Basic), Hindi, Persian" oninput="renderCV()" style="width: 65%; padding: 8px; background: #0f172a; border: 1px solid #334155; color: white; border-radius: 4px;">
+                        </div>
+                    </div>
+                </div>
+                <button class="add-btn" onclick="addSkillGroup()">➕ Add More Skills</button>
+            </div>
+        </div> <!-- End of Dynamic Sections Container -->
+        
+        <div id="custom-sections-container"></div>
+        
+        <button class="add-sec-btn" onclick="addCustomSection()">➕ Add New Custom Section</button>
+        
+    </div>
+    
+    <div class="preview-pane" id="app-preview-pane">
+        <div id="cv-scale-wrapper">
+            <div id="cv-paper" class="tpl-executive">
+                <div id="cv-dynamic-content"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="mobile-bottom-nav">
+    <button class="nav-btn active" id="btn-nav-form" onclick="switchMobileTab('form')"><span style="font-size: 16pt;">📝</span> Edit CV</button>
+    <button class="nav-btn" id="btn-nav-preview" onclick="switchMobileTab('preview')"><span style="font-size: 16pt;">👁️</span> Preview</button>
+    <button class="nav-btn download-btn" onclick="downloadDirectPDF()"><span style="font-size: 16pt;">📥</span> Get PDF</button>
+</div>
+
+<script>
+    // 100% OFFLINE SAFE PLACEHOLDER FOR IMAGES 
+    var offlineImageSVG = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNTAgMTUwIj48cmVjdCB3aWR0aD0iMTUwIiBoZWlnaHQ9IjE1MCIgZmlsbD0iI2UyZThmMCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk0YTNiOCI+UGhvdG8gKHVwbG9hZCk8L3RleHQ+PC9zdmc+';
+    var uploadedPhotoData = offlineImageSVG;
+
+    document.getElementById('mini-photo-img').src = uploadedPhotoData;
+
+    function processPhoto(event) {
+        var file = event.target.files[0];
+        if (file) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                uploadedPhotoData = e.target.value || e.target.result;
+                var miniImg = document.getElementById('mini-photo-img');
+                if (miniImg) miniImg.src = uploadedPhotoData;
+                renderCV();
+            };
+            reader.readAsDataURL(file); 
+        }
+    }
+
+    function updatePhotoPlacement() {
+        var img = document.getElementById('cv-photo-img');
+        var miniImg = document.getElementById('mini-photo-img');
+        var zoom = document.getElementById('slider-zoom').value;
+        var x = document.getElementById('slider-x').value;
+        var y = document.getElementById('slider-y').value;
+        var transformStr = "scale(" + (zoom/100) + ") translate(" + x + "px, " + y + "px)";
+        if (img) img.style.transform = transformStr;
+        if (miniImg) miniImg.style.transform = transformStr;
+    }
+
+    function applyTemplate() {
+        var select = document.getElementById('style-select');
+        document.getElementById('cv-paper').className = select.value;
+        renderCV();
+    }
+
+    // HELPER FUNCTION: Prevents quotes in text from breaking the HTML structure during import
+    function escapeHTML(str) {
+        if(str === null || str === undefined) return "";
+        str = String(str);
+        return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    }
+
+    // NEW HELPER FUNCTION: Dynamic File Naming based on applicant name + timestamp
+    function getDynamicFileName(ext) {
+        let rawName = document.getElementById('in-name').value || 'My';
+        // Sanitize name (allow english, bengali, and numbers, replace others with underscore)
+        let safeName = rawName.trim().replace(/[^a-zA-Z0-9\u0980-\u09FF]+/g, '_');
+        
+        if (ext === 'pdf') {
+            return safeName + '_CV.pdf';
+        } else {
+            let d = new Date();
+            let dateStr = d.getFullYear() + '-' + 
+                          String(d.getMonth() + 1).padStart(2, '0') + '-' + 
+                          String(d.getDate()).padStart(2, '0') + '_' + 
+                          String(d.getHours()).padStart(2, '0') + '-' + 
+                          String(d.getMinutes()).padStart(2, '0');
+            return safeName + '_Data_' + dateStr + '.json';
+        }
+    }
+
+    function addExperienceGroup(h = "New Job Title • Company", d = "Start Date – End Date", b = "Describe your responsibilities...") {
+        const list = document.getElementById('experience-list');
+        if(!list) return;
+        const div = document.createElement('div');
+        div.className = 'dynamic-group experience-item';
+        div.innerHTML = `<button class="remove-btn" onclick="this.parentElement.remove(); renderCV();">X</button>
+            <div class="form-group"><label>Job Title & Company</label><input type="text" class="in-j-h" value="${escapeHTML(h)}" oninput="renderCV()"></div>
+            <div class="form-group"><label>Date & Location</label><input type="text" class="in-j-d" value="${escapeHTML(d)}" oninput="renderCV()"></div>
+            <div class="form-group"><label>Description</label><textarea class="in-j-b" oninput="renderCV()">${escapeHTML(b)}</textarea></div>`;
+        list.appendChild(div);
+        renderCV();
+    }
+
+    function addSkillGroup(label = "New Skill Category", val = "Skill 1, Skill 2, Skill 3") {
+        const list = document.getElementById('skills-list');
+        if(!list) return;
+        const div = document.createElement('div');
+        div.className = 'dynamic-group skill-item';
+        div.style.padding = '12px';
+        div.innerHTML = `<button class="remove-btn" style="top: 8px; right: 8px; padding: 2px 6px;" onclick="this.parentElement.remove(); renderCV();">X</button>
+            <div style="display: flex; gap: 10px; margin-right: 25px;">
+                <input type="text" class="skill-label" value="${escapeHTML(label)}" oninput="renderCV()" style="width: 35%; padding: 8px; background: #0f172a; border: 1px solid #334155; color: #38bdf8; font-weight:bold; border-radius: 4px;">
+                <input type="text" class="skill-val" value="${escapeHTML(val)}" oninput="renderCV()" style="width: 65%; padding: 8px; background: #0f172a; border: 1px solid #334155; color: white; border-radius: 4px;">
+            </div>`;
+        list.appendChild(div);
+        renderCV();
+    }
+
+    function addCustomSection(t = "New Section Title", c = "• Add your details here...") {
+        const container = document.getElementById('custom-sections-container');
+        const div = document.createElement('div');
+        div.className = 'form-section custom-section-wrapper';
+        div.innerHTML = `
+            <div class="section-header-row">
+                <span class="section-label">Custom Section</span>
+                <button class="remove-sec-btn" onclick="this.closest('.form-section').remove(); renderCV();">🗑️ Remove Section</button>
+            </div>
+            <input type="text" class="editable-title custom-sec-title" value="${escapeHTML(t)}" oninput="renderCV()">
+            <div class="form-group">
+                <label>Content (Add new lines for bullets or paragraphs)</label>
+                <textarea class="custom-sec-content" oninput="renderCV()">${escapeHTML(c)}</textarea>
+            </div>
+        `;
+        container.appendChild(div);
+        renderCV();
+    }
+
+    function buildExportJSON() {
+        let data = {
+            profile: {
+                photo: uploadedPhotoData,
+                zoom: document.getElementById('slider-zoom').value,
+                x: document.getElementById('slider-x').value,
+                y: document.getElementById('slider-y').value,
+                name: document.getElementById('in-name').value,
+                title: document.getElementById('in-title').value,
+                c1: document.getElementById('in-c1').value,
+                c2: document.getElementById('in-c2').value
+            },
+            template: document.getElementById('style-select').value,
+            sections: { summary: null, experience: null, projects: null, edu: null, skills: null, custom: [] }
+        };
+
+        if(document.getElementById('sec-wrapper-summary')) {
+            data.sections.summary = { title: document.getElementById('sec-title-summary').value, content: document.getElementById('in-summary').value };
+        }
+        if(document.getElementById('sec-wrapper-exp')) {
+            let items = [];
+            document.querySelectorAll('.experience-item').forEach(item => {
+                items.push({ h: item.querySelector('.in-j-h').value, d: item.querySelector('.in-j-d').value, b: item.querySelector('.in-j-b').value });
+            });
+            data.sections.experience = { title: document.getElementById('sec-title-exp').value, items: items };
+        }
+        if(document.getElementById('sec-wrapper-projects')) {
+            data.sections.projects = { title: document.getElementById('sec-title-projects').value, content: document.getElementById('in-projects').value };
+        }
+        if(document.getElementById('sec-wrapper-edu')) {
+            data.sections.edu = { title: document.getElementById('sec-title-edu').value, content: document.getElementById('in-edu').value };
+        }
+        if(document.getElementById('sec-wrapper-skills')) {
+            let items = [];
+            document.querySelectorAll('.skill-item').forEach(item => {
+                items.push({ label: item.querySelector('.skill-label').value, val: item.querySelector('.skill-val').value });
+            });
+            data.sections.skills = { title: document.getElementById('sec-title-skills').value, items: items };
+        }
+        document.querySelectorAll('.custom-section-wrapper').forEach(item => {
+            data.sections.custom.push({ title: item.querySelector('.custom-sec-title').value, content: item.querySelector('.custom-sec-content').value });
+        });
+        return JSON.stringify(data, null, 2);
+    }
+
+    function exportData(manualClick = false) {
+        let jsonStr = buildExportJSON();
+        let blob = new Blob([jsonStr], { type: "application/json" });
+        let url = URL.createObjectURL(blob);
+        let a = document.createElement('a');
+        
+        // V40 NEW DYNAMIC FILE NAME
+        a.download = getDynamicFileName('json');
+        a.href = url;
+        a.click();
+        URL.revokeObjectURL(url);
+        
+        if(manualClick) {
+            alert("✅ আপনার ডাটা সফলভাবে (" + a.download + ") সেভ হয়েছে।\nপরবর্তীতে 'Import Data' বাটনে ক্লিক করে এই ফাইলটি দিলেই আবার আগের অবস্থায় ফিরে আসবে।");
+        }
+    }
+
+    /* --- THE NEW, 100% BULLETPROOF IMPORT SYSTEM --- */
+    function importData(event) {
+        var file = event.target.files[0];
+        if (!file) return;
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                var data = JSON.parse(e.target.result);
+                if (!data.sections) data.sections = {};
+                
+                if(data.profile) {
+                    uploadedPhotoData = data.profile.photo || offlineImageSVG;
+                    document.getElementById('mini-photo-img').src = uploadedPhotoData;
+                    document.getElementById('slider-zoom').value = data.profile.zoom || 130;
+                    document.getElementById('slider-x').value = data.profile.x || 0;
+                    document.getElementById('slider-y').value = data.profile.y || -10;
+                    document.getElementById('in-name').value = data.profile.name || "";
+                    document.getElementById('in-title').value = data.profile.title || "";
+                    document.getElementById('in-c1').value = data.profile.c1 || "";
+                    document.getElementById('in-c2').value = data.profile.c2 || "";
+                }
+                
+                if(data.template) { document.getElementById('style-select').value = data.template; }
+                
+                let dynHtml = ""; 
+                
+                if(data.sections.summary) {
+                    dynHtml += `
+                        <div class="form-section standard-sec" data-type="summary" id="sec-wrapper-summary">
+                            <div class="section-header-row"><span class="section-label">Section Title</span><button class="remove-sec-btn" onclick="this.closest('.form-section').remove(); renderCV();">🗑️ Remove Section</button></div>
+                            <input type="text" id="sec-title-summary" class="editable-title" value="${escapeHTML(data.sections.summary.title)}" oninput="renderCV()">
+                            <div class="form-group"><textarea id="in-summary" oninput="renderCV()">${escapeHTML(data.sections.summary.content)}</textarea></div>
+                        </div>`;
+                }
+                
+                if(data.sections.experience) {
+                    let itemsHtml = "";
+                    if(data.sections.experience.items && Array.isArray(data.sections.experience.items)) {
+                        data.sections.experience.items.forEach(item => {
+                            itemsHtml += `
+                                <div class="dynamic-group experience-item">
+                                    <button class="remove-btn" onclick="this.parentElement.remove(); renderCV();">X</button>
+                                    <div class="form-group"><label>Job Title & Company</label><input type="text" class="in-j-h" value="${escapeHTML(item.h)}" oninput="renderCV()"></div>
+                                    <div class="form-group"><label>Date & Location</label><input type="text" class="in-j-d" value="${escapeHTML(item.d)}" oninput="renderCV()"></div>
+                                    <div class="form-group"><label>Description</label><textarea class="in-j-b" oninput="renderCV()">${escapeHTML(item.b)}</textarea></div>
+                                </div>`;
+                        });
+                    }
+                    dynHtml += `
+                        <div class="form-section standard-sec" data-type="experience" id="sec-wrapper-exp">
+                            <div class="section-header-row"><span class="section-label">Section Title</span><button class="remove-sec-btn" onclick="this.closest('.form-section').remove(); renderCV();">🗑️ Remove Section</button></div>
+                            <input type="text" id="sec-title-exp" class="editable-title" value="${escapeHTML(data.sections.experience.title)}" oninput="renderCV()">
+                            <div id="experience-list">${itemsHtml}</div>
+                            <button class="add-btn" onclick="addExperienceGroup()">➕ Add More Experience</button>
+                        </div>`;
+                }
+
+                if(data.sections.projects) {
+                    dynHtml += `
+                        <div class="form-section standard-sec" data-type="projects" id="sec-wrapper-projects">
+                            <div class="section-header-row"><span class="section-label">Section Title</span><button class="remove-sec-btn" onclick="this.closest('.form-section').remove(); renderCV();">🗑️ Remove Section</button></div>
+                            <input type="text" id="sec-title-projects" class="editable-title" value="${escapeHTML(data.sections.projects.title)}" oninput="renderCV()">
+                            <div class="form-group"><label>Add new lines to create bullet points</label><textarea id="in-projects" oninput="renderCV()">${escapeHTML(data.sections.projects.content)}</textarea></div>
+                        </div>`;
+                }
+
+                if(data.sections.edu) {
+                    dynHtml += `
+                        <div class="form-section standard-sec" data-type="edu" id="sec-wrapper-edu">
+                            <div class="section-header-row"><span class="section-label">Section Title</span><button class="remove-sec-btn" onclick="this.closest('.form-section').remove(); renderCV();">🗑️ Remove Section</button></div>
+                            <input type="text" id="sec-title-edu" class="editable-title" value="${escapeHTML(data.sections.edu.title)}" oninput="renderCV()">
+                            <div class="form-group"><label>Add new lines to create bullet points</label><textarea id="in-edu" oninput="renderCV()">${escapeHTML(data.sections.edu.content)}</textarea></div>
+                        </div>`;
+                }
+
+                if(data.sections.skills) {
+                    let skillsHtml = "";
+                    if(data.sections.skills.items && Array.isArray(data.sections.skills.items)) {
+                        data.sections.skills.items.forEach(item => {
+                            skillsHtml += `
+                                <div class="dynamic-group skill-item" style="padding: 12px;">
+                                    <button class="remove-btn" style="top: 8px; right: 8px; padding: 2px 6px;" onclick="this.parentElement.remove(); renderCV();">X</button>
+                                    <div style="display: flex; gap: 10px; margin-right: 25px;">
+                                        <input type="text" class="skill-label" value="${escapeHTML(item.label)}" oninput="renderCV()" style="width: 35%; padding: 8px; background: #0f172a; border: 1px solid #334155; color: #38bdf8; font-weight:bold; border-radius: 4px;">
+                                        <input type="text" class="skill-val" value="${escapeHTML(item.val)}" oninput="renderCV()" style="width: 65%; padding: 8px; background: #0f172a; border: 1px solid #334155; color: white; border-radius: 4px;">
+                                    </div>
+                                </div>`;
+                        });
+                    }
+                    dynHtml += `
+                        <div class="form-section standard-sec" data-type="skills" id="sec-wrapper-skills">
+                            <div class="section-header-row"><span class="section-label">Section Title</span><button class="remove-sec-btn" onclick="this.closest('.form-section').remove(); renderCV();">🗑️ Remove Section</button></div>
+                            <input type="text" id="sec-title-skills" class="editable-title" value="${escapeHTML(data.sections.skills.title)}" oninput="renderCV()">
+                            <div id="skills-list">${skillsHtml}</div>
+                            <button class="add-btn" onclick="addSkillGroup()">➕ Add More Skills</button>
+                        </div>`;
+                }
+                
+                document.getElementById('dynamic-sections-container').innerHTML = dynHtml;
+
+                let customHtml = "";
+                if(data.sections.custom && Array.isArray(data.sections.custom)) {
+                    data.sections.custom.forEach(item => {
+                        customHtml += `
+                            <div class="form-section custom-section-wrapper">
+                                <div class="section-header-row">
+                                    <span class="section-label">Custom Section</span>
+                                    <button class="remove-sec-btn" onclick="this.closest('.form-section').remove(); renderCV();">🗑️ Remove Section</button>
+                                </div>
+                                <input type="text" class="editable-title custom-sec-title" value="${escapeHTML(item.title)}" oninput="renderCV()">
+                                <div class="form-group">
+                                    <label>Content (Add new lines for bullets or paragraphs)</label>
+                                    <textarea class="custom-sec-content" oninput="renderCV()">${escapeHTML(item.content)}</textarea>
+                                </div>
+                            </div>`;
+                    });
+                }
+                document.getElementById('custom-sections-container').innerHTML = customHtml;
+
+                renderCV();
+                alert("✅ আপনার ডাটা সফলভাবে রিস্টোর হয়েছে!");
+            } catch (err) {
+                console.error("JSON Import Error Details:", err);
+                alert("❌ ফাইলটি পড়তে সমস্যা হচ্ছে। দয়া করে সঠিক CV_Data.json ফাইলটি সিলেক্ট করুন।\nError: " + err.message);
+            }
+        };
+        reader.readAsText(file);
+        event.target.value = ""; 
+    }
+
+    function adjustMobilePreview() {
+        var wrapper = document.getElementById('cv-scale-wrapper');
+        var paper = document.getElementById('cv-paper');
+        if (window.innerWidth <= 900) {
+            var scale = (window.innerWidth - 30) / 850;
+            wrapper.style.transform = 'scale(' + scale + ')';
+            var scaledHeight = paper.offsetHeight * scale;
+            wrapper.style.height = scaledHeight + 'px';
+        } else {
+            wrapper.style.transform = 'none';
+            wrapper.style.height = 'auto';
+        }
+    }
+    window.addEventListener('resize', adjustMobilePreview);
+
+    function switchMobileTab(tab) {
+        var formBtn = document.getElementById('btn-nav-form');
+        var previewBtn = document.getElementById('btn-nav-preview');
+        var sidebar = document.getElementById('app-sidebar');
+        var previewPane = document.getElementById('app-preview-pane');
+
+        if (tab === 'form') {
+            formBtn.classList.add('active'); previewBtn.classList.remove('active');
+            sidebar.style.display = 'block'; previewPane.style.display = 'none';
+        } else {
+            previewBtn.classList.add('active'); formBtn.classList.remove('active');
+            sidebar.style.display = 'none'; previewPane.style.display = 'flex';
+            setTimeout(adjustMobilePreview, 50);
+        }
+    }
+
+    function downloadDirectPDF() {
+        exportData(false);
+        setTimeout(function(){
+            alert("আপনার বর্তমান সিভির ডাটা অটোমেটিক ডাউনলোড করা হয়েছে।\n\nপরে যদি আবার এই সিভি এডিট করতে চান, তাহলে একদম উপরে থাকা 'Import Data' বাটনে ক্লিক করে ডাউনলোড হওয়া ডাটা ফাইলটি সিলেক্ট করলেই সব তথ্য আবার চলে আসবে!");
+        }, 200);
+
+        var element = document.getElementById('cv-paper');
+        var desktopBtn = document.querySelector('.btn-print.desktop-only');
+        var mobileBtn = document.querySelector('.nav-btn.download-btn');
+        var originalDesktopText = desktopBtn ? desktopBtn.innerText : '';
+        var originalMobileHTML = mobileBtn ? mobileBtn.innerHTML : '';
+        
+        if(desktopBtn) desktopBtn.innerText = "⏳ Generating...";
+        if(mobileBtn) mobileBtn.innerHTML = "<span style='font-size: 16pt;'>⏳</span> Wait...";
+
+        let dynamicPdfName = getDynamicFileName('pdf');
+
+        if (window.innerWidth <= 900) {
+            document.body.classList.add('pdf-export-mode');
+            setTimeout(function() {
+                var w = 850; var h = Math.ceil(element.getBoundingClientRect().height) + 2; 
+                var opt = { margin: 0, filename: dynamicPdfName, image: { type: 'jpeg', quality: 1 }, html2canvas: { scale: 2, useCORS: true, logging: false, windowWidth: 850, scrollY: 0 }, jsPDF: { unit: 'px', format: [w, h], orientation: 'portrait' } };
+                html2pdf().set(opt).from(element).save().then(function() {
+                    document.body.classList.remove('pdf-export-mode');
+                    if(desktopBtn) desktopBtn.innerText = originalDesktopText;
+                    if(mobileBtn) mobileBtn.innerHTML = originalMobileHTML;
+                    adjustMobilePreview();
+                });
+            }, 500);
+        } else {
+            var originalShadow = element.style.boxShadow;
+            element.style.boxShadow = 'none';
+            setTimeout(function() {
+                var w = element.offsetWidth; var h = Math.ceil(element.getBoundingClientRect().height) + 2; 
+                var opt = { margin: 0, filename: dynamicPdfName, image: { type: 'jpeg', quality: 1 }, html2canvas: { scale: 2, useCORS: true, logging: false }, jsPDF: { unit: 'px', format: [w, h], orientation: 'portrait' } };
+                html2pdf().set(opt).from(element).save().then(function() {
+                    element.style.boxShadow = originalShadow;
+                    if(desktopBtn) desktopBtn.innerText = originalDesktopText;
+                    if(mobileBtn) mobileBtn.innerHTML = originalMobileHTML;
+                });
+            }, 100);
+        }
+    }
+
+    function safeGetValue(id) { 
+        var el = document.getElementById(id); 
+        return el ? el.value : ""; 
+    }
+
+    function renderCV() {
+        var name = document.getElementById('in-name').value;
+        var title = document.getElementById('in-title').value;
+        var c1 = document.getElementById('in-c1').value;
+        var c2 = document.getElementById('in-c2').value;
+        
+        function makeBullets(text) {
+            if(!text) return ""; 
+            var html = "";
+            text.split('\n').forEach(function(line) {
+                if (line.trim()) {
+                    if (line.trim().startsWith('•') || line.trim().startsWith('-')) { line = line.substring(1).trim(); }
+                    html += "<li>" + line.trim() + "</li>";
+                }
+            });
+            return html;
+        }
+
+        let htmlSummary = "", htmlSummaryEditorial = "", htmlSummarySidebar = "";
+        if(document.getElementById('sec-wrapper-summary')) {
+            let t = safeGetValue('sec-title-summary'); let c = safeGetValue('in-summary');
+            let base = `<div class="cv-sec"><div class="cv-sec-title">${t}</div><p class="cv-summary-text">${c}</p></div>`;
+            htmlSummary = base; htmlSummarySidebar = base;
+            htmlSummaryEditorial = `<div class="cv-sec"><div class="cv-sec-title">${t}</div><div class="cv-summary-text"><div>${c.substring(0, c.length/2)}</div><div>${c.substring(c.length/2)}</div></div></div>`;
+        }
+
+        let htmlExp = "", htmlExpSidebar = "";
+        if(document.getElementById('sec-wrapper-exp')) {
+            let t = safeGetValue('sec-title-exp');
+            let itemsStd = "", itemsSide = "";
+            document.querySelectorAll('.experience-item').forEach(item => {
+                let h = item.querySelector('.in-j-h').value; let d = item.querySelector('.in-j-d').value; let b = item.querySelector('.in-j-b').value;
+                itemsStd += `<div class="cv-entry"><div class="cv-entry-header"><div class="cv-entry-left">${h}</div><div class="cv-entry-right">${d}</div></div><ul class="cv-entry-bullets">${makeBullets(b)}</ul></div>`;
+                itemsSide += `<div class="cv-entry" style="margin-top:8px;"><strong>${h}</strong> <span style="font-size:10pt; float:right;">${d}</span><ul class="cv-entry-bullets">${makeBullets(b)}</ul></div>`;
+            });
+            htmlExp = `<div class="cv-sec"><div class="cv-sec-title">${t}</div>${itemsStd}</div>`;
+            htmlExpSidebar = `<div class="cv-sec"><div class="cv-sec-title">${t}</div>${itemsSide}</div>`;
+        }
+
+        let htmlProj = "";
+        if(document.getElementById('sec-wrapper-projects')) {
+            let t = safeGetValue('sec-title-projects'); let c = safeGetValue('in-projects');
+            htmlProj = `<div class="cv-sec"><div class="cv-sec-title">${t}</div><ul class="cv-entry-bullets" style="padding-left:16px;">${makeBullets(c)}</ul></div>`;
+        }
+
+        let htmlEdu = "";
+        if(document.getElementById('sec-wrapper-edu')) {
+            let t = safeGetValue('sec-title-edu'); let c = safeGetValue('in-edu');
+            htmlEdu = `<div class="cv-sec"><div class="cv-sec-title">${t}</div><ul class="cv-entry-bullets" style="list-style-type:none; padding-left:0;">${makeBullets(c)}</ul></div>`;
+        }
+
+        let htmlSkills = "", htmlSkillsSidebar = "";
+        if(document.getElementById('sec-wrapper-skills')) {
+            let t = safeGetValue('sec-title-skills');
+            let col1 = "", col2 = "", side = "";
+            document.querySelectorAll('.skill-item').forEach((item, index) => {
+                let label = item.querySelector('.skill-label').value; let val = item.querySelector('.skill-val').value;
+                let htmlStr = `<div class="cv-skill-item"><strong>${label}:</strong> ${val}</div>`;
+                if (index % 2 === 0) col1 += htmlStr; else col2 += htmlStr;
+                side += `<div class="cv-skill-item" style="margin-top:10px;"><strong>${label}:</strong> ${val}</div>`;
+            });
+            htmlSkills = `<div class="cv-sec"><div class="cv-sec-title">${t}</div><div class="cv-skills-layout"><div class="cv-skills-col">${col1}</div><div class="cv-skills-col">${col2}</div></div></div>`;
+            htmlSkillsSidebar = `<div class="cv-sec" style="margin-top:20px;"><div class="cv-sec-title">${t}</div>${side}</div>`;
+        }
+
+        let htmlCustom = "";
+        document.querySelectorAll('.custom-section-wrapper').forEach(item => {
+            let t = item.querySelector('.custom-sec-title').value;
+            let c = item.querySelector('.custom-sec-content').value;
+            htmlCustom += `<div class="cv-sec"><div class="cv-sec-title">${t}</div><ul class="cv-entry-bullets" style="padding-left:16px;">${makeBullets(c)}</ul></div>`;
+        });
+
+        var currentTpl = document.getElementById('style-select').value;
+        var headerHTML = `
+            <div class="cv-header">
+                <div class="cv-photo-frame"><img id="cv-photo-img" src="${uploadedPhotoData}" alt="Profile"></div>
+                <div class="cv-name-title"><h1 class="cv-name">${name}</h1><div class="cv-title">${title}</div><div class="cv-contact-row">${c1}<br>${c2}</div></div>
+            </div>
+        `;
+
+        var target = document.getElementById('cv-dynamic-content');
+        
+        if (currentTpl === 'tpl-modern-sidebar') {
+            target.innerHTML = `
+                <div class="tpl-twocol-wrapper">
+                    <div class="tpl-twocol-side">${headerHTML}${htmlSkillsSidebar}</div>
+                    <div class="tpl-twocol-main">${htmlSummarySidebar}${htmlExpSidebar}${htmlProj}${htmlEdu}${htmlCustom}</div>
+                </div>
+            `;
+        } else if (currentTpl === 'tpl-editorial') {
+            target.innerHTML = headerHTML + htmlSummaryEditorial + htmlExp + htmlProj + htmlEdu + htmlSkills + htmlCustom;
+        } else {
+            target.innerHTML = headerHTML + htmlSummary + htmlExp + htmlProj + htmlEdu + htmlSkills + htmlCustom;
+        }
+        
+        updatePhotoPlacement();
+        var previewPane = document.getElementById('app-preview-pane');
+        if (window.innerWidth <= 900 && window.getComputedStyle(previewPane).display !== 'none') {
+            setTimeout(adjustMobilePreview, 50);
+        }
+    }
+
+    renderCV();
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./service-worker.js').then(reg => {
+        console.log('PWA: ServiceWorker registered');
+      }).catch(err => {
+        console.warn('PWA: ServiceWorker registration failed', err);
+      });
+    }
+</script>
+</body>
+</html>
