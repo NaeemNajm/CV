@@ -447,7 +447,7 @@
                 💾 Export
             </button>
 
-            <button class="btn-sync" style="background:rgba(168,85,247,0.15);color:#a855f7;border:1px solid rgba(168,85,247,0.3);" onclick="openTraditionalCV()">
+            <button class="btn-sync" style="background:rgba(168,85,247,0.15);color:#a855f7;border:1px solid rgba(168,85,247,0.3);" onclick="if(window.innerWidth<=900){window.location.href='Final_Nargis_CV_All_Certificates.html'}else{openTraditionalCV()}">
                 📄 প্রচলিত সিভি
             </button>
 
@@ -664,7 +664,7 @@ Handled IT procurement, leveraging hardware knowledge to source cost-effective t
 <div class="mobile-bottom-nav">
     <button class="nav-btn active" id="btn-nav-form" onclick="switchMobileTab('form')"><span>📝</span> Edit CV</button>
     <button class="nav-btn" id="btn-nav-preview" onclick="switchMobileTab('preview')"><span>👁️</span> Preview</button>
-    <button class="nav-btn" onclick="openTraditionalCV()"><span>📄</span> Old CV</button>
+    <button class="nav-btn" onclick="if(window.innerWidth<=900){window.location.href='Final_Nargis_CV_All_Certificates.html'}else{openTraditionalCV()}"><span>📄</span> Old CV</button>
     <button class="nav-btn download-btn" onclick="downloadDirectPDF()"><span>📥</span> Get PDF</button>
 </div>
 

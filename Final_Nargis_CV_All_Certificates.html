@@ -178,8 +178,11 @@
 <body>
 
     <div class="controls-bar" id="controls">
-        <h3>১ পৃষ্ঠার গ্যারান্টিড এডিটেবল সি-ভি</h3>
-        <p class="hide-in-pdf">পিডিএফ তৈরির সমস্যা পুরোপুরি ঠিক করা হয়েছে। লেখা আর কেটে যাবে না।</p>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;flex-wrap:wrap;gap:4px;">
+            <button onclick="window.location.href='index.html'" style="background:#6b7280;color:white;border:none;padding:6px 14px;border-radius:5px;font-size:13px;font-weight:bold;cursor:pointer;">← Back</button>
+            <h3 style="margin:0;font-size:16px;color:#333;">১ পৃষ্ঠার গ্যারান্টিড এডিটেবল সি-ভি</h3>
+        </div>
+        <p class="hide-in-pdf" style="margin:0 0 10px 0;font-size:13px;color:#555;">পিডিএফ তৈরির সমস্যা পুরোপুরি ঠিক করা হয়েছে। লেখা আর কেটে যাবে না।</p>
         <button class="btn-download hide-in-pdf" onclick="generatePDF()">⬇️ ডাউনলোড PDF</button>
     </div>
 
