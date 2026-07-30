@@ -74,6 +74,20 @@
             overflow: hidden; 
         }
 
+        /* PDF generation mode: overrides fixed sizing, overflow, and transforms */
+        .pdf-mode {
+            height: auto !important;
+            overflow: visible !important;
+            transform: none !important;
+        }
+        .pdf-mode .signature-area {
+            position: relative !important;
+            bottom: auto !important;
+            right: auto !important;
+            margin-left: auto;
+            margin-top: 20px;
+        }
+
         /* Header matching original exactly */
         .header-container {
             display: flex;
@@ -330,47 +344,34 @@
         }
 
         function generatePDF() {
-            const cv = document.getElementById('cv-document');
+            const element = document.getElementById('cv-document');
             
-            // Temporary hide elements strictly for print
-            const hints = document.querySelectorAll('.hide-in-pdf');
-            hints.forEach(h => h.style.display = 'none');
+            // Add pdf-mode class for clean rendering (removes fixed height, overflow, and transform)
+            element.classList.add('pdf-mode');
             
-            // Handle Photo placeholder border for print
-            const imgElement = document.getElementById('profileImage');
-            const photoBox = document.querySelector('.photo-box');
-            if (imgElement.style.display !== 'block') {
-                photoBox.style.border = '1px solid transparent';
-            }
-
-            // Remove scale transform before creating PDF so it renders at full 100% resolution
-            const oldTransform = cv.style.transform;
-            cv.style.transform = 'none';
-
-            // JS-PDF Configuration tailored to strictly fit exactly 1 page
+            // Hide UI helper elements
+            document.querySelectorAll('.hide-in-pdf').forEach(el => el.style.display = 'none');
+            
             const opt = {
-                margin:       0, // Zero margin to strictly use the CSS padding instead
+                margin:       0,
                 filename:     'Nargis_Sultana_Updated_CV.pdf',
                 image:        { type: 'jpeg', quality: 1 },
                 html2canvas:  { 
                     scale: 2, 
                     useCORS: true, 
                     windowWidth: 794,
-                    scrollY: 0 // Prevents scrolling offset issues
-                }, 
+                    scrollY: 0
+                },
                 jsPDF:        { 
-                    unit: 'px', 
-                    format: [794, 1123], // Exact A4 Pixel size at 96 DPI
-                    orientation: 'portrait',
-                    hotfixes: ["px_scaling"] // Fixes scaling issues in some browsers
+                    unit: 'mm', 
+                    format: 'a4',
+                    orientation: 'portrait'
                 }
             };
-
-            html2pdf().set(opt).from(cv).save().then(() => {
-                // Restore scale and UI elements after PDF generation
-                cv.style.transform = oldTransform;
-                hints.forEach(h => h.style.display = 'inline-block');
-                if (imgElement.style.display !== 'block') photoBox.style.border = '1px solid #777';
+            
+            html2pdf().set(opt).from(element).save().then(() => {
+                element.classList.remove('pdf-mode');
+                document.querySelectorAll('.hide-in-pdf').forEach(el => el.style.display = '');
             });
         }
     </script>
