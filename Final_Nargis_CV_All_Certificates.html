@@ -46,6 +46,22 @@
             max-width: 250px;
         }
 
+        .trad-btn-row {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .trad-btn-row .btn-download {
+            width: auto;
+            flex: 1;
+            min-width: 120px;
+            max-width: 220px;
+            font-size: 14px;
+            padding: 9px 14px;
+        }
+
         #cv-wrapper {
             width: 100%;
             display: flex;
@@ -183,7 +199,12 @@
             <h3 style="margin:0;font-size:16px;color:#333;">১ পৃষ্ঠার গ্যারান্টিড এডিটেবল সি-ভি</h3>
         </div>
         <p class="hide-in-pdf" style="margin:0 0 10px 0;font-size:13px;color:#555;">পিডিএফ তৈরির সমস্যা পুরোপুরি ঠিক করা হয়েছে। লেখা আর কেটে যাবে না।</p>
-        <button class="btn-download hide-in-pdf" onclick="generatePDF()">⬇️ ডাউনলোড PDF</button>
+        <div class="trad-btn-row hide-in-pdf">
+            <button class="btn-download" style="background:#f59e0b;" onclick="exportTradData(true)">💾 Export</button>
+            <button class="btn-download" style="background:#3b82f6;" onclick="document.getElementById('tradImportFile').click()">📂 Import</button>
+            <button class="btn-download" onclick="generatePDF()">⬇️ ডাউনলোড PDF</button>
+        </div>
+        <input type="file" id="tradImportFile" accept=".json" style="display:none;" onchange="importTradData(event)">
     </div>
 
     <div id="cv-wrapper">
@@ -196,14 +217,14 @@
                     <img id="profileImage" src="" alt="Profile">
                 </div>
                 
-                <div class="header-text" contenteditable="true">
+                <div class="header-text" id="cv-header-text" contenteditable="true">
                     <h1>Sultana Nargis</h1>
                     <p>Fulbari Uttarpara, Bogura Sadar</p>
                     <p>01815175007 | nargis.cv.work@gmail.com</p>
                 </div>
             </div>
 
-            <div contenteditable="true">
+            <div id="cv-body-content" contenteditable="true">
                 
                 <div class="section-title" contenteditable="false">Objective <span class="edit-hint hide-in-pdf">(এডিট করতে ক্লিক করুন)</span></div>
                 <div class="paragraph">
@@ -288,7 +309,7 @@
             </div>
 
             <div class="signature-area">
-                <div class="signature-text" contenteditable="true">S. Nargis</div>
+                <div class="signature-text" id="cv-signature-text" contenteditable="true">S. Nargis</div>
                 <div class="signature-line">Applicant's Signature</div>
             </div>
             
@@ -369,6 +390,57 @@
                 });
                 photoBox.style.border = originalPhotoBorder;
             });
+        }
+
+        function buildTradJSON() {
+            var data = {
+                photo: document.getElementById('profileImage').src || "",
+                header: document.getElementById('cv-header-text').innerHTML,
+                content: document.getElementById('cv-body-content').innerHTML,
+                signature: document.getElementById('cv-signature-text').innerText
+            };
+            return JSON.stringify(data, null, 2);
+        }
+
+        function exportTradData(manualClick) {
+            var jsonStr = buildTradJSON();
+            var blob = new Blob([jsonStr], { type: "application/json" });
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.download = 'Nargis_CV_Data.json';
+            a.href = url;
+            a.click();
+            URL.revokeObjectURL(url);
+            if (manualClick) {
+                alert("✅ আপনার ডাটা সফলভাবে (Nargis_CV_Data.json) সেভ হয়েছে।\nপরবর্তীতে 'Import' বাটনে ক্লিক করে এই ফাইলটি দিলেই আবার আগের অবস্থায় ফিরে আসবে।");
+            }
+        }
+
+        function importTradData(event) {
+            var file = event.target.files[0];
+            if (!file) return;
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    var data = JSON.parse(e.target.result);
+                    if (data.photo) {
+                        var img = document.getElementById('profileImage');
+                        img.src = data.photo;
+                        img.style.display = 'block';
+                        document.getElementById('photoPlaceholder').style.display = 'none';
+                        document.querySelector('.photo-box').style.border = 'none';
+                    }
+                    if (data.header) document.getElementById('cv-header-text').innerHTML = data.header;
+                    if (data.content) document.getElementById('cv-body-content').innerHTML = data.content;
+                    if (data.signature) document.getElementById('cv-signature-text').innerText = data.signature;
+                    alert("✅ আপনার ডাটা সফলভাবে রিস্টোর হয়েছে!");
+                } catch (err) {
+                    console.error("Import Error:", err);
+                    alert("❌ ফাইলটি পড়তে সমস্যা হচ্ছে। সঠিক JSON ফাইলটি সিলেক্ট করুন।\nError: " + err.message);
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = "";
         }
     </script>
 </body>
